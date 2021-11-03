@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -21,8 +20,8 @@ type User struct {
 	DeviceId *string `db:"-"`
 
 	// relation table will be here
-	UserVerifications []byte `db:"user_verifications"`
-	UserStores        []byte `db:"user_store"`
+	UserVerifications []*UserVerification `db:"-"`
+	UserStores        []*UserStore        `db:"-"`
 }
 
 func (u *User) GetDeviceId() *string {
@@ -131,48 +130,20 @@ func (u *User) SetUpdatedAt(updatedAt time.Time) {
 }
 
 func (u *User) AddUserVerification(userVerification *UserVerification) {
-	var uv = u.GetUserVerifications()
-	uv = append(uv, userVerification)
-
-	dataByte, err := json.Marshal(uv)
-	if err != nil {
-		return
-	}
-
-	u.UserVerifications = dataByte
+	u.UserVerifications = append(u.UserVerifications, userVerification)
 }
 
 func (u *User) RemoveUserVerification(userVerification *UserVerification) {
-	var uv = u.GetUserVerifications()
-
-	for key, val := range uv {
+	for key, val := range u.UserVerifications {
 		if val == userVerification {
-			uv = append(uv[:key], uv[key+1:]...)
+			u.UserVerifications = append(u.UserVerifications[:key], u.UserVerifications[key+1:]...)
 			break
 		}
 	}
-
-	dataByte, err := json.Marshal(uv)
-	if err != nil {
-		return
-	}
-
-	u.UserVerifications = dataByte
 }
 
 func (u *User) GetUserVerifications() []*UserVerification {
-	var uv = make([]*UserVerification, 0)
-
-	if u.UserVerifications == nil {
-		return uv
-	}
-
-	err := json.Unmarshal(u.UserVerifications, &uv)
-	if err != nil {
-		return uv
-	}
-
-	return uv
+	return u.UserVerifications
 }
 
 func (u *User) GetUserVerificationByMediumAndDestination(medium, dest string) *UserVerification {
@@ -184,47 +155,23 @@ func (u *User) GetUserVerificationByMediumAndDestination(medium, dest string) *U
 	return &UserVerification{}
 }
 
+func (u *User) SetUserStores(userStores []*UserStore) {
+	u.UserStores = userStores
+}
+
 func (u *User) AddUserStore(userStore *UserStore) {
-	var uv = u.GetUserStores()
-	uv = append(uv, userStore)
-
-	dataByte, err := json.Marshal(uv)
-	if err != nil {
-		return
-	}
-
-	u.UserStores = dataByte
+	u.UserStores = append(u.UserStores, userStore)
 }
 
 func (u *User) RemoveUserStore(userStore *UserStore) {
-	var uv = u.GetUserStores()
-
-	for key, val := range uv {
+	for key, val := range u.UserStores {
 		if val == userStore {
-			uv = append(uv[:key], uv[key+1:]...)
+			u.UserStores = append(u.UserStores[:key], u.UserStores[key+1:]...)
 			break
 		}
 	}
-
-	dataByte, err := json.Marshal(uv)
-	if err != nil {
-		return
-	}
-
-	u.UserStores = dataByte
 }
 
 func (u *User) GetUserStores() []*UserStore {
-	var uv = make([]*UserStore, 0)
-
-	if u.UserStores == nil {
-		return uv
-	}
-
-	err := json.Unmarshal(u.UserStores, &uv)
-	if err != nil {
-		return uv
-	}
-
-	return uv
+	return u.UserStores
 }

@@ -3,27 +3,34 @@ package models
 import (
 	"spos/users/constant"
 	"time"
+
+	"github.com/s-pos/go-utils/helpers"
 )
 
 type Store struct {
-	ID            int     `db:"id"`
-	OwnerID       int     `db:"owner_id"`
-	RefShopID     *int    `db:"ref_shop_id"`
-	RefUserID     *int    `db:"ref_user_id"`
-	RefShopStatus *string `db:"ref_shop_status"`
-	Name          string  `db:"name"`
-	Domain        *string `db:"domain"`
-	Logo          string  `db:"logo"`
-	Description   *string `db:"description"`
-	Enabled       bool    `db:"enabled"`
-	Type          string  `db:"type"`
-	Source        string  `db:"source"`
-	CreatedAt     string  `db:"created_at"`
-	UpdatedAt     *string `db:"updated_at"`
-	Deleted       bool    `db:"deleted"`
+	ID            int        `db:"id" json:"id"`
+	OwnerID       int        `db:"owner_id" json:"-"`
+	RefShopID     *int       `db:"ref_shop_id" json:"refShopId"`
+	RefUserID     *int       `db:"ref_user_id" json:"refUserId"`
+	RefShopStatus *string    `db:"ref_shop_status" json:"refShopStatus"`
+	Name          string     `db:"name" json:"name"`
+	Domain        *string    `db:"domain" json:"domain"`
+	Logo          string     `db:"logo" json:"logo"`
+	Description   *string    `db:"description" json:"description"`
+	Enabled       bool       `db:"enabled" json:"enabled"`
+	Type          string     `db:"type" json:"type"`
+	Source        string     `db:"source" json:"source"`
+	CreatedAt     time.Time  `db:"created_at" json:"createdAt"`
+	UpdatedAt     *time.Time `db:"updated_at" json:"-"`
+	Deleted       bool       `db:"deleted" json:"-"`
 
 	// relation table
-	Owner []byte `db:"owner"`
+	Owner *User `db:"-" json:"-"`
+
+	// Formatted
+	Formatted struct {
+		CreatedAt string `db:"-" json:"createdAt,omitempty"`
+	} `db:"-" json:"formatted,omitempty"`
 }
 
 func NewStore() *Store {
@@ -34,7 +41,7 @@ func NewStore() *Store {
 		Enabled:   !enabled,
 		Type:      constant.Offline,
 		Source:    constant.Offline,
-		CreatedAt: now.Format(layout),
+		CreatedAt: now,
 	}
 }
 
@@ -170,18 +177,16 @@ func (s *Store) IsSourceShopee() bool {
 }
 
 func (s *Store) SetCreatedAt(CreatedAt time.Time) {
-	createdAt := timeToString(CreatedAt)
-	s.CreatedAt = createdAt
+	s.CreatedAt = CreatedAt.UTC()
 }
 
 func (s *Store) GetCreatedAt() time.Time {
-	created, _ := stringToTime(s.CreatedAt)
+	created := convertTimezone(s.CreatedAt)
 	return created
 }
 
 func (s *Store) SetUpdatedAt(UpdatedAt time.Time) {
-	updatedAt := timeToString(UpdatedAt)
-	s.UpdatedAt = &updatedAt
+	s.UpdatedAt = &UpdatedAt
 }
 
 func (s *Store) GetUpdatedAt() time.Time {
@@ -189,7 +194,7 @@ func (s *Store) GetUpdatedAt() time.Time {
 		return time.Time{}
 	}
 
-	updatedAt, _ := stringToTime(*s.UpdatedAt)
+	updatedAt := convertTimezone(*s.UpdatedAt)
 	return updatedAt
 }
 
@@ -199,4 +204,12 @@ func (s *Store) SetDeleted(deleted bool) {
 
 func (s *Store) GetDeleted() bool {
 	return s.Deleted
+}
+
+func (s *Store) SetFormattedCreatedAt(t time.Time) {
+	s.Formatted.CreatedAt = helpers.IndonesiaDateTime(t, false)
+}
+
+func (s *Store) GetFormattedCreatedAt() string {
+	return s.Formatted.CreatedAt
 }

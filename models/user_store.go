@@ -1,24 +1,22 @@
 package models
 
 import (
-	"encoding/json"
 	"time"
 )
 
 type UserStore struct {
-	ID        int     `db:"id"`
-	UserID    int     `db:"user_id"`
-	RoleID    int     `db:"role_id"`
-	StoreID   int     `db:"store_id"`
-	Enabled   bool    `db:"enabled"`
-	CreatedAt string  `db:"created_at"`
-	UpdatedAt *string `db:"updated_at"`
-	Deleted   bool    `db:"deleted"`
+	ID        int        `db:"id"`
+	UserID    int        `db:"user_id"`
+	RoleID    int        `db:"role_id"`
+	StoreID   int        `db:"store_id"`
+	Enabled   bool       `db:"enabled"`
+	CreatedAt time.Time  `db:"created_at"`
+	UpdatedAt *time.Time `db:"updated_at"`
+	Deleted   bool       `db:"deleted"`
 
 	// relation table
-	Store []byte `db:"store"`
-	User  []byte `db:"user"`
-	Role  []byte `db:"role"`
+	Store *Store `db:"-"`
+	User  *User  `db:"user"`
 }
 
 func NewUserStore() *UserStore {
@@ -27,7 +25,7 @@ func NewUserStore() *UserStore {
 	return &UserStore{
 		RoleID:    1,
 		Enabled:   enabled,
-		CreatedAt: now.Format(layout),
+		CreatedAt: now,
 	}
 }
 
@@ -72,18 +70,16 @@ func (us *UserStore) IsEnabled() bool {
 }
 
 func (us *UserStore) SetCreatedAt(createdAt time.Time) {
-	created := timeToString(createdAt)
-	us.CreatedAt = created
+	us.CreatedAt = createdAt
 }
 
 func (us *UserStore) GetCreatedAt() time.Time {
-	created, _ := stringToTime(us.CreatedAt)
+	created := convertTimezone(us.CreatedAt)
 	return created
 }
 
 func (us *UserStore) SetUpdatedAt(updatedAt time.Time) {
-	updated := timeToString(updatedAt)
-	us.UpdatedAt = &updated
+	us.UpdatedAt = &updatedAt
 }
 
 func (us *UserStore) GetUpdatedAt() time.Time {
@@ -91,7 +87,7 @@ func (us *UserStore) GetUpdatedAt() time.Time {
 		return time.Time{}
 	}
 
-	updatedAt, _ := stringToTime(*us.UpdatedAt)
+	updatedAt := convertTimezone(*us.UpdatedAt)
 	return updatedAt
 }
 
@@ -104,21 +100,9 @@ func (us *UserStore) GetDeleted() bool {
 }
 
 func (us *UserStore) SetStore(store *Store) {
-	dataByte, err := json.Marshal(store)
-	if err != nil {
-		return
-	}
-
-	us.Store = dataByte
+	us.Store = store
 }
 
 func (us *UserStore) GetStore() *Store {
-	var store *Store
-
-	err := json.Unmarshal(us.Store, &store)
-	if err != nil {
-		return nil
-	}
-
-	return store
+	return us.Store
 }
